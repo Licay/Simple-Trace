@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config SIMPLE_TRACE
+	tristate "simple trace support"
+	depends on KPROBES
+	default n
+	help
+	  If you say Y here, the support for simple_trace
+
+config SIMPLE_TRACE_LOGSIZE_SHIFT
+	int "simple trace log size shift"
+	range 8 20
+	depends on SIMPLE_TRACE
+	default 12
+	help
+		log_size = (1 << SIMPLE_TRACE_LOGSIZE_SHIFT)
