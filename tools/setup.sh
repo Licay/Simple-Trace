@@ -1,16 +1,13 @@
 #!/bin/bash
 
-KERNEL_DIR=$1
+# KERNEL_DIR=
+# BRANCH=""
+
 if [ -z "$KERNEL_DIR" ]; then
-    echo "Usage: $0 <kernel_dir>"
-    exit 1
+    KERNEL_DIR="./"
 fi
 KERNEL_DIR=$(realpath "$KERNEL_DIR")
-RC=$2
-BRANCH=""
-if [ $2 = "rc" ]; then
-    BRANCH="rc"
-else
+if [ -z "$BRANCH" ]; then
     BRANCH="main"
 fi
 
