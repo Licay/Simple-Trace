@@ -1,0 +1,25 @@
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index efb66e25fa2d..9588ab648afc 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -1,6 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0
+ menu "Device Drivers"
+ 
++source "drivers/simple_trace/Kconfig"
++
+ # Keep I/O buses first
+ 
+ source "drivers/amba/Kconfig"
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 1bec7819a837..8e5b1e6c3780 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -11,6 +11,7 @@ ifdef building_out_of_srctree
+ MAKEFLAGS += --include-dir=$(srctree)
+ endif
+ 
++obj-y				+= simple_trace/
+ obj-y				+= cache/
+ obj-y				+= irqchip/
+ obj-y				+= bus/
