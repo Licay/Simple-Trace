@@ -14,3 +14,19 @@ config SIMPLE_TRACE_LOGSIZE_SHIFT
 	default 12
 	help
 		log_size = (1 << SIMPLE_TRACE_LOGSIZE_SHIFT)
+
+config SIMPLE_LOOKUP_NAME
+	tristate "simple lookup name support"
+	depends on KPROBES
+	default n
+	help
+	  If you say Y here, the support for simple_lookup_name
+
+config SIMPLE_LOOKUP_NAME_PROC
+	bool "simple lookup name proc support"
+	depends on SIMPLE_LOOKUP_NAME
+	default n
+	help
+	  If you say Y here, the support for simple_lookup_name_proc
+	  will be enabled. This will create a /proc entry for the
+	  simple_lookup_name.
