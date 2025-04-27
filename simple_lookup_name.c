@@ -17,6 +17,8 @@
 #include <linux/kallsyms.h>
 #endif
 
+unsigned long simple_kallsyms_lookup_name(const char *name);
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
 static unsigned long (*kallsyms_lookup_name_sym)(const char *name) = NULL;
 
@@ -28,10 +30,10 @@ static int _kallsyms_lookup_kprobe(struct kprobe *p, struct pt_regs *regs)
 /*
  * get symbol of kallsyms_lookup_name() function
  */
-static int *get_kallsyms_func(void)
+static void *get_kallsyms_func(void)
 {
 	struct kprobe kp_kallsyms_lookup_name;
-	int *kallsyms_lookup_name_addr;
+	void *kallsyms_lookup_name_addr;
 	int ret;
 
 	kp_kallsyms_lookup_name.pre_handler = _kallsyms_lookup_kprobe;
@@ -59,7 +61,7 @@ unsigned long simple_kallsyms_lookup_name(const char *name)
 		}
 	}
 
-	return kallsyms_lookup_name_sym(name);
+	return (unsigned long)kallsyms_lookup_name_sym(name);
 }
 
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
@@ -137,11 +139,6 @@ static const struct proc_ops sln_fops = {
 
 static int __init sln_trace_init(void)
 {
-// #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
-// 	if(!kallsyms_lookup_name_sym) {
-// 		kallsyms_lookup_name_sym = (void *)get_kallsyms_func();
-// 	}
-// #endif
 	proc_create("simple_lookup", 0660, NULL, &sln_fops);
 	return 0;
 }
