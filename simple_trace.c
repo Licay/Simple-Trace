@@ -270,32 +270,6 @@ static int st_info_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-#define ST_LOG_BY_SINGLE 0
-
-#if ST_LOG_BY_SINGLE
-static int st_log_show(struct seq_file *m, void *v)
-{
-	int len;
-	int ret;
-
-	if (kfifo_is_empty(&trace_log)) {
-		return 0;
-	}
-
-	len = kfifo_len(&trace_log);
-
-	if (m->count + len >= m->size) {
-		m->count = m->size;
-		// seq_set_overflow(m);
-		goto out;
-	}
-	ret = kfifo_out(&trace_log, m->buf + m->count, len);
-	m->count += len;
-
-out:
-	return 0;
-}
-#else
 static ssize_t st_log_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	unsigned int copied;
@@ -318,7 +292,6 @@ static ssize_t st_log_read(struct file *file, char __user *buf, size_t count, lo
 out:
 	return ret;
 }
-#endif
 
 static int st_log_open(struct inode *inode, struct file *file)
 {
@@ -337,33 +310,20 @@ static int st_log_open(struct inode *inode, struct file *file)
 	PRT(DEBUG, "fifo->out = %d fifo->in = %d\n",
 		trace_log.kfifo.out, trace_log.kfifo.in);
 
-#if ST_LOG_BY_SINGLE
-	return single_open(file, st_log_show, inode->i_private);
-#else
 	return 0;
-#endif
 }
 
 static int st_log_release(struct inode *inode, struct file *file)
 {
 	log_open_flag = 0;
-#if ST_LOG_BY_SINGLE
-	return single_release(inode, file);
-#else
-		return 0;
-#endif
+	return 0;
 }
 
 static const struct proc_ops st_log_fops = {
 	.proc_open	= st_log_open,
 	.proc_release	= st_log_release,
-#if ST_LOG_BY_SINGLE
-	.proc_read = seq_read,
-	.proc_lseek	= seq_lseek,
-#else
 	.proc_read = st_log_read,
 	.proc_lseek	= noop_llseek,
-#endif
 };
 
 static ssize_t
