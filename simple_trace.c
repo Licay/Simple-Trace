@@ -54,10 +54,19 @@ struct trace_item {
 	struct kretprobe kretprobe;
 
 	char name[KSYM_NAME_LEN];
-	unsigned char type;
+	unsigned long type;
 	struct list_head node;
 	ktime_t entry_stamp;
+	int extra[0];
 };
+
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+struct st_use_time {
+	spinlock_t lock;
+	u64 total_ns;
+	u64 times;
+};
+#endif
 
 static spinlock_t log_fifo_lock;
 static DECLARE_WAIT_QUEUE_HEAD(st_log_wait);
@@ -122,6 +131,20 @@ static int ret_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
 	now = ktime_get();
 	ts = ktime_to_timespec64(now);
 	delta = ktime_to_ns(ktime_sub(now, ti->entry_stamp));
+
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+	if (test_bit(TRACE_USE_TIME, &ti->type)) {
+		if ((int)retval >= 0) {
+			struct st_use_time *ut = (struct st_use_time *)ti->extra;
+
+			spin_lock(&ut->lock);
+			ut->total_ns += delta;
+			ut->times++;
+			spin_unlock(&ut->lock);
+		}
+	}
+#endif
+
 	len = snprintf(log_tmp, sizeof(log_tmp),
 		"[%6lld.%06ld] <<- %s (%d)%lu (%lld)\n",
 		ts.tv_sec, ts.tv_nsec / 1000,
@@ -181,10 +204,29 @@ int simple_trace_add(struct sim_trace *p, int count)
 			return -EEXIST;
 		}
 
-		ti = kzalloc(sizeof(*ti), GFP_KERNEL);
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+		ti = kzalloc(sizeof(*ti) + (test_bit(TRACE_USE_TIME, &p->type) ?
+						    sizeof(struct st_use_time) :
+						    0),
+			     GFP_KERNEL);
 		if (!ti)
 			return -ENOMEM;
 
+		if (test_bit(TRACE_USE_TIME, &p->type)) {
+			ti = kzalloc(sizeof(*ti) + sizeof(struct st_use_time),
+				     GFP_KERNEL);
+			if (!ti)
+				return -ENOMEM;
+
+			struct st_use_time *ut = (struct st_use_time *)ti->extra;
+
+			spin_lock_init(&ut->lock);
+		}
+#else
+		ti = kzalloc(sizeof(*ti), GFP_KERNEL);
+		if (!ti)
+			return -ENOMEM;
+#endif
 		snprintf(ti->name, sizeof(ti->name), "%s", p->sym);
 		ti->type = p->type;
 		ti->kp->addr = (kprobe_opcode_t *)p->addr;
@@ -192,7 +234,7 @@ int simple_trace_add(struct sim_trace *p, int count)
 			ti->kp->symbol_name = ti->name;
 		p++;
 #if IS_ENABLED(CONFIG_KRETPROBES)
-		if (ti->type == TRACE_ENTRET) {
+		if (test_bit(TRACE_ENTRET, &ti->type)) {
 			ti->rp->entry_handler = ent_handler;
 			ti->rp->handler = ret_handler;
 			ti->rp->data_size = 0;
@@ -232,7 +274,7 @@ int simple_trace_remove(struct sim_trace *p, int count)
 		}
 
 #if IS_ENABLED(CONFIG_KRETPROBES)
-		if (ti->type == TRACE_ENTRET) {
+		if (test_bit(TRACE_ENTRET, &ti->type)) {
 			unregister_kretprobe(ti->rp);
 		} else
 #endif
@@ -253,18 +295,27 @@ static struct proc_dir_entry *dir_entry = NULL;
 
 static int st_info_show(struct seq_file *m, void *v)
 {
-	struct trace_item *st;
+	struct trace_item *ti;
 	struct kprobe *p;
 
 	seq_printf(m, "[type]  [sym]\n");
-	list_for_each_entry(st, &sim_trace_list, node) {
+	list_for_each_entry(ti, &sim_trace_list, node) {
 // #if IS_ENABLED(CONFIG_KRETPROBES)
-//                 if (st->type == TRACE_ENTRET)
+//                 if (test_bit(TRACE_ENTRET, &ti->type))
 //                         p = get_kprobe(st->kp->addr);
 // #endif
-		p = st->kp;
-		seq_printf(m, "%6s  [%px]%s\n", st->type == TRACE_ENTRET ? "ENTRET" : "ENTRY",
+		p = ti->kp;
+		seq_printf(m, "%6s  [%px]%s\n", test_bit(TRACE_ENTRET, &ti->type) ? "ENTRET" : "ENTRY",
 				p->addr, p->symbol_name);
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+		if (test_bit(TRACE_USE_TIME, &ti->type)) {
+			struct st_use_time *ut;
+
+			ut = (struct st_use_time *)ti->extra;
+			seq_printf(m, "\tall times: %lld use %lld ns\n", ut->times,
+				ut->total_ns);
+		}
+#endif
 	}
 
 	return 0;
@@ -344,10 +395,14 @@ st_ctrl_write(struct file *filp, const char *ubuf, size_t cnt, loff_t *data)
 
 	if (buf[0] == '!') {
 		simple_trace_remove_one(&buf[1], NULL);
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+	} else if (buf[0] == '?') {
+		simple_trace_add_one(&buf[1], NULL, BIT(TRACE_ENTRET) | BIT(TRACE_USE_TIME));
+#endif
 	} else if (buf[0] == '@') {
-		simple_trace_add_one(&buf[1], NULL, TRACE_ENTRET);
+		simple_trace_add_one(&buf[1], NULL, BIT(TRACE_ENTRET));
 	} else {
-		simple_trace_add_one(&buf[0], NULL, TRACE_ENTRY);
+		simple_trace_add_one(&buf[0], NULL, BIT(TRACE_ENTRY));
 	}
 
 	return cnt;
@@ -403,7 +458,7 @@ static void __exit simple_trace_exit(void)
 	proc_remove(dir_entry);
 
 	list_for_each_entry_safe(ti, tmp, &sim_trace_list, node) {
-		if (ti->type == TRACE_ENTRET)
+		if (test_bit(TRACE_ENTRET, &ti->type))
 			unregister_kretprobe(ti->rp);
 		else
 			unregister_kprobe(ti->kp);

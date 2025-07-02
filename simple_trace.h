@@ -4,17 +4,20 @@
 #define PRT(levl, fmt, ...) \
 	printk(KERN_##levl pr_fmt("%s:%d " fmt), __func__, __LINE__, ##__VA_ARGS__)
 
-// #define ENTRY 0
-// #define ENTRET 1
 enum {
 	TRACE_ENTRY = 0,
 	TRACE_ENTRET,
+#if IS_ENABLED(CONFIG_SIMPLE_TRACE_USE_TIME)
+	TRACE_USE_TIME,
+#endif
+
+	TRACE_FLAG_MAX,
 };
 
 struct sim_trace {
 	char *sym;
 	void *addr;
-	unsigned char type;
+	unsigned long type;
 };
 
 int simple_trace_add(struct sim_trace *p, int count);

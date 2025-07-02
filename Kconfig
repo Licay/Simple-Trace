@@ -30,3 +30,12 @@ config SIMPLE_LOOKUP_NAME_PROC
 	  If you say Y here, the support for simple_lookup_name_proc
 	  will be enabled. This will create a /proc entry for the
 	  simple_lookup_name.
+
+config SIMPLE_TRACE_USE_TIME
+	bool "simple trace run time support"
+	depends on SIMPLE_TRACE && KRETPROBES
+	default y
+	help
+	  If you say Y here, the support for simple_trace_run_time
+	  will be enabled. This will allow the trace to record the
+	  run time of each event.
