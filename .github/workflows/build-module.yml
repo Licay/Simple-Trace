@@ -38,7 +38,7 @@ jobs:
 
       - name: Clone Linux kernel
         run: |
-          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v5.15.0' }} 
+          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v6.15' }} 
           cd kernel
           echo "Linux kernel $(make kernelversion) cloned"
           
