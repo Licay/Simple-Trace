@@ -44,6 +44,7 @@ jobs:
           
       - name: Build kernel module
         run: |
+          make -C kernel defconfig
           make -C kernel M=./ modules CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" CONFIG_SIMPLE_TRACE_USE_TIME=y
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
