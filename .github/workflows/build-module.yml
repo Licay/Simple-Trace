@@ -46,10 +46,10 @@ jobs:
         run: |
           KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
           make -C kernel O=out defconfig
-          echo "CONFIG_SIMPLE_TRACE=m" >> kernel/.config
-          echo "CONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" >> kernel/.config
-          echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
-          echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
+          # echo "CONFIG_SIMPLE_TRACE=m" >> kernel/.config
+          # echo "CONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" >> kernel/.config
+          # echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
+          # echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
           make -C kernel O=out -j`nproc`
           find . -name "simple*.ko"
           cp `find . -name "simple*.ko"` ./
