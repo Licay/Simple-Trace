@@ -44,14 +44,13 @@ jobs:
           
       - name: Build kernel module
         run: |
-          alias m="make -C kernel O=out"
-          m defconfig
-          m -j`nproc`
+          make -C kernel O=out defconfig
+          make -C kernel O=out -j`nproc`
           echo "CONFIG_SIMPLE_TRACE=m" >> kernel/.config
           echo "CONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" >> kernel/.config
           echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
           echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
-          m M=`pwd` modules
+          make -C kernel O=out M=`pwd` modules
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
 
