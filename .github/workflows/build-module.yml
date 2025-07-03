@@ -17,6 +17,9 @@ jobs:
         kernel: ["6.8.0-63-generic", "6.11.0-24-generic"]
 
     steps:
+      - name: Show current kernel version
+        run: uname -r
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -35,4 +38,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kernel-modules
-          path: simple_trace-${{ matrix.kernel }}.ko simple_lookup_name-${{ matrix.kernel }}.ko
+          path: |
+            simple_trace-*.ko
+            simple_lookup_name-*.ko
