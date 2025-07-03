@@ -3,7 +3,7 @@ name: rc / Build
 on:
   push:
     branches:
-      - rc
+      - wkf-test
   pull_request:
 
 permissions:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        kernel: ["5.15.0-78-generic", "6.11.0-24-generic"]
+        kernel: ["5.15.0-78-generic", "6.2.0-31-generic"]
 
     steps:
       - name: Checkout code
