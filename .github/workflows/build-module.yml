@@ -34,7 +34,7 @@ jobs:
       - name: Set up env
         run: |
           sudo apt-get update
-          sudo apt-get install -y make gcc git build-essential
+          sudo apt-get install -y make gcc git build-essential libncurses-dev flex bison libssl-dev libelf-dev bc cpio xz-utils
 
       - name: Clone Linux kernel
         run: |
