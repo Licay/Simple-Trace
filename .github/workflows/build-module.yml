@@ -44,6 +44,8 @@ jobs:
           
       - name: Build kernel module
         run: |
+          wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
+          setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/kernel/arch/arm64/configs/gki_defconfig; m olddefconfig; mk
           KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
           make -C kernel O=out defconfig
           # echo "CONFIG_SIMPLE_TRACE=m" >> kernel/.config
