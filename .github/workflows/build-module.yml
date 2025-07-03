@@ -50,8 +50,8 @@ jobs:
           # echo "CONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" >> kernel/.config
           # echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
           # echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
-          make -C kernel O=out -j`nproc`
-          make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" -C kernel M=./kernel/drivers/simple_trace modules
+          # make -C kernel O=out -j`nproc`
+          make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m -C kernel modules -j`nproc`
           find . -name "simple*.ko"
           cp `find . -name "simple*.ko"` ./
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
