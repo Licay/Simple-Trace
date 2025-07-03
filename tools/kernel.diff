@@ -12,14 +12,14 @@ index efb66e25fa2d..9588ab648afc 100644
  
  source "drivers/amba/Kconfig"
 diff --git a/drivers/Makefile b/drivers/Makefile
-index 1bec7819a837..8e5b1e6c3780 100644
+index 1bec7819a837..74363d78710e 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -11,6 +11,7 @@ ifdef building_out_of_srctree
- MAKEFLAGS += --include-dir=$(srctree)
- endif
- 
+@@ -5,6 +5,7 @@
+ # 15 Sep 2000, Christoph Hellwig <hch@infradead.org>
+ # Rewritten to use lists instead of if-statements.
+ #
 +obj-y				+= simple_trace/
- obj-y				+= cache/
- obj-y				+= irqchip/
- obj-y				+= bus/
+ 
+ # Some driver Makefiles miss $(srctree)/ for include directive.
+ ifdef building_out_of_srctree

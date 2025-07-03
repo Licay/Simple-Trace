@@ -3,7 +3,7 @@
 config SIMPLE_TRACE
 	tristate "simple trace support"
 	depends on KPROBES
-	default n
+	default m
 	help
 	  If you say Y here, the support for simple_trace
 
