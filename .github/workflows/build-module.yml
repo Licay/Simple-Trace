@@ -14,7 +14,7 @@ on:
         default: 'x86_64'
   push:
     branches:
-      - rc
+      - wkf-test
   pull_request:
 
 permissions:
