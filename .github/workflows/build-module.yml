@@ -32,7 +32,7 @@ jobs:
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
 
       - name: Upload module as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: kernel-modules
           path: simple_trace-${{ matrix.kernel }}.ko simple_lookup_name-${{ matrix.kernel }}.ko
