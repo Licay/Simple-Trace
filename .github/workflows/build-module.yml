@@ -34,7 +34,7 @@ jobs:
       - name: Set up env
         run: |
           sudo apt-get update
-          sudo apt-get install -y make gcc git build-essential libncurses-dev flex bison libssl-dev libelf-dev bc cpio xz-utils
+          sudo apt-get install -y make gcc git build-essential libncurses-dev flex bison libssl-dev libelf-dev bc cpio xz-utils curl
 
       - name: Clone Linux kernel
         run: |
@@ -44,13 +44,15 @@ jobs:
           
       - name: Build kernel module
         run: |
+          KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
           make -C kernel O=out defconfig
-          make -C kernel O=out -j`nproc`
           echo "CONFIG_SIMPLE_TRACE=m" >> kernel/.config
           echo "CONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" >> kernel/.config
           echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
           echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
-          make -C kernel O=out M=`pwd` modules
+          make -C kernel O=out -j`nproc`
+          find . -name "simple*.ko"
+          cp `find . -name "simple*.ko"` ./
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
 
