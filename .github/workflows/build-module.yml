@@ -1,6 +1,17 @@
 name: rc / Build
 
 on:
+  # 手动触发工作流
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: 'Linux Kernel Version (e.g., v5.15.0)'
+        required: true
+        default: 'v6.15'
+      arch:
+        description: 'Architecture (e.g., x86_64, arm64)'
+        required: true
+        default: 'x86_64'
   push:
     branches:
       - wkf-test
@@ -12,9 +23,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        kernel: ["6.8.0-63-generic", "6.11.0-24-generic"]
 
     steps:
       - name: Show current kernel version
@@ -28,6 +36,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y linux-headers-${{ matrix.kernel }} build-essential
 
+      - name: Clone Linux kernel
+        run: |
+          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v5.15.0' }} 
+          cd kernel
+          echo "Linux kernel $(make kernelversion) cloned"
+          
       - name: Build kernel module
         run: |
           make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" CONFIG_SIMPLE_TRACE_USE_TIME=y
