@@ -31,7 +31,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kernel headers
+      - name: Set up env
         run: |
           sudo apt-get update
           sudo apt-get install -y linux-headers-${{ matrix.kernel }} build-essential
@@ -44,7 +44,7 @@ jobs:
           
       - name: Build kernel module
         run: |
-          make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" CONFIG_SIMPLE_TRACE_USE_TIME=y
+          make -C kernel M=./ modules CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" CONFIG_SIMPLE_TRACE_USE_TIME=y
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
 
