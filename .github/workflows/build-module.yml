@@ -38,7 +38,7 @@ jobs:
 
       - name: Clone Linux kernel
         run: |
-          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v6.15' }} 
+          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v6.11' }} 
           cd kernel
           echo "Linux kernel $(make kernelversion) cloned"
           
@@ -51,6 +51,7 @@ jobs:
           # echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >> kernel/.config
           # echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
           make -C kernel O=out -j`nproc`
+          make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m EXTRA_CFLAGS="-DCONFIG_SIMPLE_TRACE_LOGSIZE_SHIFT=12" -C kernel M=./kernel/drivers/simple_trace modules
           find . -name "simple*.ko"
           cp `find . -name "simple*.ko"` ./
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
