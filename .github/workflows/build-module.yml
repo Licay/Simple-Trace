@@ -74,6 +74,7 @@ jobs:
           mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
           mv kernel/out/arch/arm64/boot/Image ./
+        shell: bash
 
       - name: Upload module as artifact
         uses: actions/upload-artifact@v4
