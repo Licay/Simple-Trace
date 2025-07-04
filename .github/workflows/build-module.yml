@@ -38,15 +38,15 @@ jobs:
 
       - name: Clone Linux kernel
         run: |
-          # git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v6.11' }} 
-          git clone https://android.googlesource.com/kernel/msm kernel --depth 1 --branch main
+          git clone https://github.com/torvalds/linux.git kernel --depth 1 --branch ${{ github.event.inputs.kernel_version || 'v6.6' }} 
+          # git clone https://android.googlesource.com/kernel/msm kernel --depth 1 --branch main
           cd kernel
           echo "Linux kernel $(make kernelversion) cloned"
           
       - name: Build kernel module
         run: |
           wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
-          echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/kernel/arch/arm64/configs/gki_defconfig; m olddefconfig; mk"
+          echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/kernel/arch/arm64/configs/virt.config; m olddefconfig; mk"
           setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/kernel/arch/arm64/configs/gki_defconfig; m olddefconfig; mk
           du -h -d 1 ./prebuilts*
           KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
