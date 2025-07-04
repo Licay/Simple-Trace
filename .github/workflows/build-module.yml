@@ -47,7 +47,7 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
           echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config ; m olddefconfig; mk"
-          setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk
+          bash -c "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk"
           du -h -d 1 ./prebuilts*
           KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
           make -C kernel O=out defconfig
