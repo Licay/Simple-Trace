@@ -48,9 +48,9 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: ~/prebuilts
-          key: ${{ runner.os }}-prebuilts-${{ github.sha }}
+          key: ${{ runner.os }}-prebuilts-aarch64
           restore-keys: |
-            ${{ runner.os }}-prebuilts-
+            ${{ runner.os }}-prebuilts-aarch64
 
       - name: Build kernel module
         run: |
