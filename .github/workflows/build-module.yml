@@ -42,12 +42,24 @@ jobs:
           # git clone https://android.googlesource.com/kernel/msm kernel --depth 1 --branch main
           cd kernel
           echo "Linux kernel $(make kernelversion) cloned"
-          
+
+      - name: Cache prebuilts
+        id: cache-prebuilts
+        uses: actions/cache@v4.2.3
+        with:
+          path: ~/prebuilts
+          key: ${{ runner.os }}-prebuilts-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-prebuilts-
+
       - name: Build kernel module
         run: |
           wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
+          sed -i '/PREBUILTS_DIR=/a\PREBUILTS_DIR=~/prebuilts' kernel_mk.sh
+          echo "m olddefconfig; mk" >> kernel_mk.sh
           echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config ; m olddefconfig; mk"
-          zsh -c "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk"
+          # zsh -c "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk"
+          setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config
           du -h -d 1 ./prebuilts*
           KERNEL_DIR=./kernel BRANCH=rc sh -c "$(curl -fsSL https://github.com/Licay/Simple-Trace/raw/refs/heads/rc/tools/setup.sh)"
           make -C kernel O=out defconfig
