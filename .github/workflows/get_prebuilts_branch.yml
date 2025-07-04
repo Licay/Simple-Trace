@@ -2,6 +2,11 @@ name: Get prebuilts
 
 on:
   workflow_dispatch:
+    inputs:
+      message:
+        description: 'Commit message'
+        required: true
+        default: 'Manual commit by workflow dispatch'
 
 jobs:
   build:
@@ -37,7 +42,7 @@ jobs:
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git add --all
-            git commit -m "Automated commit by GitHub Actions"
+            git commit -m "Automated commit by GitHub Actions: ${{ github.event.inputs.message }}"
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
