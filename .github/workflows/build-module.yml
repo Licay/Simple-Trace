@@ -60,7 +60,7 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
           sed -i '/PREBUILTS_DIR=/a\PREBUILTS_DIR=~/prebuilts' kernel_mk.sh
-          echo "m CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m olddefconfig; cat wk/out/.config | grep CONFIG_SIMPLE; mk" >> kernel_mk.sh
+          echo "m CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m olddefconfig; echo "--- show test configs"; cat wk/out/.config | grep CONFIG_SIMPLE; mk" >> kernel_mk.sh
           # echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config ; m olddefconfig; mk"
           # zsh -c "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk"
 
@@ -76,8 +76,9 @@ jobs:
           # echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> kernel/.config
           # make -C kernel O=out -j`nproc`
           # make CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m -C kernel O=out -j`nproc`
-          find . -name "simple*.ko"
-          cp `find . -name "simple*.ko"` ./
+          echo "now find ko..."
+          find ./wk/out -name "simple*.ko"
+          cp `find ./wk/out -name "simple*.ko"` ./
           # mv simple_trace.ko simple_trace-${{ matrix.kernel }}.ko
           # mv simple_lookup_name.ko simple_lookup_name-${{ matrix.kernel }}.ko
           mv wk/out/arch/arm64/boot/Image ./
