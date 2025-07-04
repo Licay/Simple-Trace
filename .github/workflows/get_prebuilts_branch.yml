@@ -1,0 +1,49 @@
+name: Get prebuilts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # 授予写入权限
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整的Git历史记录
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Make changes
+        run: |
+          git checkout prebuilts_aarch64
+          rm ./* -rf
+          git clone "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86" --depth=1 --branch=llvm-r510928
+          rm -rf linux-x86/.git
+          git clone "https://android.googlesource.com/platform/prebuilts/build-tools" --depth=1 --branch=llvm-r510928
+          rm -rf build-tools/.git
+          git clone "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9" --depth=1 --branch=main
+          rm -rf aarch64-linux-android-4.9/.git
+
+      - name: Commit changes
+        id: commit
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git add --all
+            git commit -m "Automated commit by GitHub Actions"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push changes
+        if: steps.commit.outputs.has_changes == 'true'
+        run: |
+          git push
