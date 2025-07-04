@@ -60,9 +60,11 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/Licay/misc_files/refs/heads/main/scripts/kernel_mk.sh
           sed -i '/PREBUILTS_DIR=/a\PREBUILTS_DIR=~/prebuilts' kernel_mk.sh
-          echo "m CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m olddefconfig; echo "--- show test configs"; cat wk/out/.config | grep CONFIG_SIMPLE; mk" >> kernel_mk.sh
-          # echo "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config ; m olddefconfig; mk"
-          # zsh -c "setup=1 WORK_DIR=./wk source kernel_mk.sh `pwd`/kernel `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config; m olddefconfig; mk"
+          echo "CONFIG_SIMPLE_TRACE=m" >> `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config
+          echo "CONFIG_SIMPLE_TRACE_USE_TIME=y" >>`pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config
+          echo "CONFIG_SIMPLE_LOOKUP_NAME=m" >> `pwd`/.github/workflows/configs/qemu_arm64_userdebug_virt.config
+          # echo "m CONFIG_SIMPLE_TRACE=m CONFIG_SIMPLE_TRACE_USE_TIME=y CONFIG_SIMPLE_LOOKUP_NAME=m olddefconfig; echo "--- show test configs"; cat wk/out/.config | grep CONFIG_SIMPLE; mk" >> kernel_mk.sh
+          echo "m olddefconfig; echo "--- show test configs"; cat wk/out/.config | grep CONFIG_SIMPLE; mk" >> kernel_mk.sh
 
       - name: Build kernel module
         run: |
