@@ -16,15 +16,14 @@
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0))
 #include <linux/kallsyms.h>
 #endif
-
-unsigned long simple_kallsyms_lookup_name(const char *name);
+#include "simple_lookup_name.h"
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
 static unsigned long (*kallsyms_lookup_name_sym)(const char *name) = NULL;
 
 static int _kallsyms_lookup_kprobe(struct kprobe *p, struct pt_regs *regs)
 {
-        return 0;
+	return 0;
 }
 
 /*
@@ -40,7 +39,7 @@ static void *get_kallsyms_func(void)
 	kp_kallsyms_lookup_name.symbol_name = "kallsyms_lookup_name";
 
 	ret = register_kprobe(&kp_kallsyms_lookup_name);
-	if(ret < 0) {
+	if (ret < 0) {
 		pr_info("register kallsyms_lookup_name failed with %d\n", ret);
 		return 0;
 	}
@@ -53,9 +52,9 @@ static void *get_kallsyms_func(void)
 
 unsigned long simple_kallsyms_lookup_name(const char *name)
 {
-	if(!kallsyms_lookup_name_sym) {
+	if (!kallsyms_lookup_name_sym) {
 		kallsyms_lookup_name_sym = (void *)get_kallsyms_func();
-		if(!kallsyms_lookup_name_sym) {
+		if (!kallsyms_lookup_name_sym) {
 			pr_info("kallsyms_lookup_name symbol get failed\n");
 			return 0;
 		}
@@ -81,7 +80,7 @@ unsigned long simple_kallsyms_lookup_name(const char *name)
 #else
 unsigned long simple_kallsyms_lookup_name(const char *name)
 {
-    return kallsyms_lookup_name(name);
+	return kallsyms_lookup_name(name);
 }
 #endif
 EXPORT_SYMBOL(simple_kallsyms_lookup_name);
@@ -89,8 +88,8 @@ EXPORT_SYMBOL(simple_kallsyms_lookup_name);
 #if IS_ENABLED(CONFIG_SIMPLE_LOOKUP_NAME_PROC)
 static char *lookup_results;
 
-static ssize_t
-sln_write(struct file *filp, const char *ubuf, size_t cnt, loff_t *data)
+static ssize_t sln_write(struct file *filp, const char *ubuf, size_t cnt,
+			 loff_t *data)
 {
 	char buf[KSYM_NAME_LEN];
 	void *addr;
@@ -149,8 +148,8 @@ static void __exit sln_trace_exit(void)
 	kfree(lookup_results);
 }
 
-module_init(sln_trace_init)
-module_exit(sln_trace_exit)
+module_init(sln_trace_init);
+module_exit(sln_trace_exit);
 #endif /* SIMPLE_LOOKUP_NAME_PROC */
 
 MODULE_LICENSE("GPL");
