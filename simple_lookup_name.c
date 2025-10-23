@@ -16,74 +16,8 @@
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0))
 #include <linux/kallsyms.h>
 #endif
-#include "simple_lookup_name.h"
+#include "simple_lookup.h"
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
-static unsigned long (*kallsyms_lookup_name_sym)(const char *name) = NULL;
-
-static int _kallsyms_lookup_kprobe(struct kprobe *p, struct pt_regs *regs)
-{
-	return 0;
-}
-
-/*
- * get symbol of kallsyms_lookup_name() function
- */
-static void *get_kallsyms_func(void)
-{
-	struct kprobe kp_kallsyms_lookup_name;
-	void *kallsyms_lookup_name_addr;
-	int ret;
-
-	kp_kallsyms_lookup_name.pre_handler = _kallsyms_lookup_kprobe;
-	kp_kallsyms_lookup_name.symbol_name = "kallsyms_lookup_name";
-
-	ret = register_kprobe(&kp_kallsyms_lookup_name);
-	if (ret < 0) {
-		pr_info("register kallsyms_lookup_name failed with %d\n", ret);
-		return 0;
-	}
-
-	kallsyms_lookup_name_addr = kp_kallsyms_lookup_name.addr;
-
-	unregister_kprobe(&kp_kallsyms_lookup_name);
-	return kallsyms_lookup_name_addr;
-}
-
-unsigned long simple_kallsyms_lookup_name(const char *name)
-{
-	if (!kallsyms_lookup_name_sym) {
-		kallsyms_lookup_name_sym = (void *)get_kallsyms_func();
-		if (!kallsyms_lookup_name_sym) {
-			pr_info("kallsyms_lookup_name symbol get failed\n");
-			return 0;
-		}
-	}
-
-	return (unsigned long)kallsyms_lookup_name_sym(name);
-}
-
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
-unsigned long simple_kallsyms_lookup_name(const char *name)
-{
-	struct kprobe kp;
-	int *kp_addr;
-
-	kp.symbol_name = name;
-	register_kprobe(&kp);
-	kp_addr = kp.addr;
-	unregister_kprobe(&kp);
-
-	return (unsigned long)kp_addr;
-}
-
-#else
-unsigned long simple_kallsyms_lookup_name(const char *name)
-{
-	return kallsyms_lookup_name(name);
-}
-#endif
-EXPORT_SYMBOL(simple_kallsyms_lookup_name);
 
 #if IS_ENABLED(CONFIG_SIMPLE_LOOKUP_NAME_PROC)
 static char *lookup_results;
@@ -92,6 +26,7 @@ static ssize_t sln_write(struct file *filp, const char *ubuf, size_t cnt,
 			 loff_t *data)
 {
 	char buf[KSYM_NAME_LEN];
+	char *sym;
 	void *addr;
 
 	if (cnt >= sizeof(buf))
@@ -105,9 +40,21 @@ static ssize_t sln_write(struct file *filp, const char *ubuf, size_t cnt,
 	else
 		buf[cnt] = '\0';
 
-	addr = (void *)simple_kallsyms_lookup_name(buf);
+	if (buf[0] == '.')
+		sym = &buf[1];
+	else
+		sym = &buf[0];
+
+	addr = (void *)simple_kallsyms_lookup_name(sym);
 	kfree(lookup_results);
-	lookup_results = kasprintf(GFP_KERNEL, "[%px]%s\n", addr, buf);
+
+	if (addr && buf[0] == '.')
+		lookup_results = kasprintf(
+			GFP_KERNEL, "[%px]%s u8:%c %x u16:%x u32:%x u64:%llx\n",
+			addr, sym, isprint(*(u8 *)addr) ? *(u8 *)addr : ' ',
+			*(u8 *)addr, *(u16 *)addr, *(u32 *)addr, *(u64 *)addr);
+	else
+		lookup_results = kasprintf(GFP_KERNEL, "[%px]%s\n", addr, sym);
 
 	return cnt;
 }
@@ -139,6 +86,7 @@ static const struct proc_ops sln_fops = {
 static int __init sln_trace_init(void)
 {
 	proc_create("simple_lookup", 0660, NULL, &sln_fops);
+
 	return 0;
 }
 
@@ -160,7 +108,7 @@ module_exit(sln_trace_exit);
 #include <linux/uidgid.h>
 #include <linux/pid.h>
 
-NGKI_DECLARE(NGKI_SYM(commit_creds));
+SIML_DECLARE(SIML_SYM(commit_creds));
 
 static int become_root(pid_t nr)
 {
@@ -196,7 +144,7 @@ static int become_root(pid_t nr)
 	new_cred->gid = new_cred->egid = new_cred->sgid = new_cred->fsgid =
 		GLOBAL_ROOT_GID;
 
-	NGKI_CALL(commit_creds, new_cred);
+	SIML_CALL(commit_creds, new_cred);
 
 	pr_info("PID=%d modified to root user: UID=%d, EUID=%d\n", nr,
 		target_task->cred->uid.val, target_task->cred->euid.val);
@@ -255,7 +203,7 @@ static const struct proc_ops simple_root_fops = {
 
 static int __init simple_root_init(void)
 {
-	if (NGKI_GET_FUNC(commit_creds))
+	if (SIML_GET_SYM(commit_creds))
 		return -ENOSYS;
 
 	return PTR_ERR(
